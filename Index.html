@@ -1,0 +1,236 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#123d2b">
+<title>Contagem de Estoque • Raízes do Acre</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:#f4f5f2;color:#18201b}
+.top{background:#123d2b;color:#fff;padding:18px 16px}.top h1{margin:0;font-size:22px}.top p{margin:5px 0 0;opacity:.88;font-size:13px}
+.wrap{max-width:900px;margin:auto;padding:14px}.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.stat,.card{background:#fff;border-radius:16px;padding:14px;box-shadow:0 3px 14px #0000000d}.stat b{display:block;font-size:22px;color:#123d2b}.stat span{font-size:11px;color:#667067}
+.actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0}.btn{border:0;border-radius:14px;padding:14px;font-weight:800;font-size:15px;cursor:pointer}
+.primary{background:#176b47;color:#fff}.secondary{background:#e8eee9;color:#164d37}.print{background:#263238;color:#fff}.warn{background:#fff0cc;color:#714c00}
+.search{width:100%;padding:14px;border:1px solid #dfe5df;border-radius:13px;font-size:16px;background:#fff}
+.product{display:flex;align-items:center;gap:12px;padding:13px 0;border-bottom:1px solid #edf0ed}.product:last-child{border:0}.info{flex:1}.product strong{display:block}.muted{font-size:12px;color:#788078}
+.badge{display:inline-block;font-size:11px;padding:4px 8px;border-radius:20px;background:#eef3ef;margin-top:5px}.out{font-size:18px;font-weight:900;color:#a72d2d}
+.modal{position:fixed;inset:0;background:#0008;display:none;align-items:flex-end;z-index:5}.modal.show{display:flex}.sheet{background:#fff;width:100%;max-width:650px;margin:auto;border-radius:22px 22px 0 0;padding:18px;max-height:92vh;overflow:auto}
+.sheet h2{margin:0 0 12px}.close{float:right;border:0;background:#eee;border-radius:50%;width:38px;height:38px;font-size:18px}
+.field{margin:10px 0}.field label{display:block;font-size:12px;font-weight:800;margin-bottom:5px}.field input{width:100%;padding:13px;border:1px solid #d9dfda;border-radius:11px;font-size:17px}
+.camera{background:#111;border-radius:14px;overflow:hidden;min-height:220px;display:grid;place-items:center;color:#fff}.camera video{width:100%;display:block}.hint{font-size:12px;color:#697169;margin-top:8px}
+.empty{text-align:center;padding:24px;color:#727a73}.report{width:100%;border-collapse:collapse;font-size:13px}.report th,.report td{padding:9px 5px;border-bottom:1px solid #eee;text-align:right}.report th:first-child,.report td:first-child{text-align:left}.report th{font-size:11px;color:#647067}
+.bigout{font-weight:900;color:#a72d2d}.ok{color:#176b47;font-weight:800}
+@media(min-width:700px){.modal{align-items:center}.sheet{border-radius:22px}.actions{grid-template-columns:repeat(4,1fr)}}
+@media print{body>*{display:none!important}#infoModal{display:block!important;position:static;background:#fff}#infoModal .sheet{display:block;max-height:none;box-shadow:none;border-radius:0;padding:3mm}.close,.no-print{display:none!important}.report{font-size:11px}}
+</style>
+<style id="receipt58-print">
+@media print{
+ @page{size:58mm auto;margin:0}
+ html,body{width:58mm!important;margin:0!important;padding:0!important;background:#fff!important}
+ body *{visibility:hidden!important}
+ #infoModal,#infoModal *{visibility:visible!important}
+ #infoModal{position:absolute!important;inset:0!important;display:block!important;background:#fff!important;padding:0!important;width:58mm!important}
+ #infoModal .modal-card{width:58mm!important;max-width:58mm!important;margin:0!important;padding:2.5mm 2mm!important;border:0!important;border-radius:0!important;box-shadow:none!important}
+ #infoModal .no-print,#infoTitle{display:none!important}
+ .receipt58{width:54mm!important;font-family:Arial,sans-serif!important;font-size:9px!important;line-height:1.28!important;color:#000!important}
+ .receipt-head{text-align:center;font-size:10px}.receipt-head b{font-size:13px}
+ .receipt-line{border-top:1px dashed #000;margin:2mm 0}
+ .receipt58 table{width:100%;border-collapse:collapse;table-layout:fixed;font-size:8px}
+ .receipt58 th,.receipt58 td{padding:1.1mm .3mm;border-bottom:1px dotted #999;vertical-align:top;overflow-wrap:anywhere}
+ .receipt58 th:first-child,.receipt58 td:first-child{width:34mm;text-align:left}
+ .receipt58 th:not(:first-child),.receipt58 td:not(:first-child){width:6mm;text-align:right}
+ .receipt-total{display:flex;justify-content:space-between;gap:2mm;margin:1mm 0}.receipt-total.grand{font-size:11px;margin-top:2mm}
+ .receipt-legend,.receipt-sign,.receipt-foot{font-size:8px}.receipt-sign{line-height:1.5}.receipt-foot{text-align:center;margin-top:3mm}
+}
+</style>
+</head>
+<body>
+<header class="top"><h1>📦 Estoque • Raízes do Acre</h1><p>Contagem da manhã → contagem do fechamento → saída automática</p></header>
+<main class="wrap">
+<section class="stats">
+<div class="stat"><b id="total">0</b><span>Produtos</span></div>
+<div class="stat"><b id="contados">0</b><span>Contados hoje</span></div>
+<div class="stat"><b id="saidaHoje">0</b><span>Saíram hoje</span></div>
+</section>
+<section class="actions">
+<button class="btn primary" onclick="scan('manha')">🌅 Contagem manhã</button>
+<button class="btn primary" onclick="scan('fechamento')">🌙 Contagem fechamento</button>
+<button class="btn secondary" onclick="openProduct()">＋ Cadastrar produto</button>
+<button class="btn print" onclick="showReport()">🧾 Relatório</button>
+</section>
+<input class="search" id="search" placeholder="Buscar produto ou código..." oninput="render()">
+<section class="card" id="list" style="margin-top:12px"></section>
+</main>
+
+<div class="modal" id="productModal"><div class="sheet">
+<button class="close" onclick="closeM('productModal')">✕</button><h2>Cadastrar produto</h2>
+<div class="field"><label>Código interno</label><input id="internal" placeholder="Ex.: BEB001"></div>
+<div class="field"><label>Código de barras do produto</label><input id="barcode" inputmode="numeric" placeholder="Bipe ou digite o código"></div>
+<div class="field"><label>Nome do produto</label><input id="name" placeholder="Ex.: Coca-Cola lata 350 ml"></div>
+<button class="btn primary" style="width:100%" onclick="saveProduct()">Salvar produto</button>
+</div></div>
+
+<div class="modal" id="countModal"><div class="sheet">
+<button class="close" onclick="closeM('countModal')">✕</button><h2 id="countTitle">Contagem</h2>
+<div class="card" style="margin-bottom:12px"><strong id="countName"></strong><div class="muted" id="countCode"></div></div>
+<div class="field"><label id="countLabel">Quantidade contada</label><input id="countQty" type="number" min="0" step="1" inputmode="numeric" placeholder="0"></div>
+<div id="calcPreview" class="card" style="display:none;margin-bottom:12px"></div>
+<button class="btn primary" style="width:100%" onclick="saveCount()">✓ Salvar e bipar próximo</button>
+</div></div>
+
+<div class="modal" id="scanModal"><div class="sheet">
+<button class="close" onclick="stopScan()">✕</button><h2 id="scanTitle">📷 Bipar código</h2>
+<div class="camera"><video id="video" playsinline></video><span id="camMsg">Abrindo câmera…</span></div>
+<div class="field"><label>Ou digite o código</label><input id="manualCode" inputmode="numeric">
+<button class="btn primary" style="width:100%;margin-top:8px" onclick="useCode(document.getElementById('manualCode').value)">Usar código</button></div>
+</div></div>
+
+<div class="modal" id="infoModal"><div class="sheet">
+<button class="close" onclick="closeM('infoModal')">✕</button><h2 id="infoTitle"></h2><div id="infoBody"></div>
+</div></div>
+
+<script>
+const PK='raizes_contagem_produtos_v4', DK='raizes_contagem_dias_v4';
+const SEEDED_PRODUCTS=[{"id":"pdv-94","pdvId":94,"internal":"BEB001","barcode":"","name":"agua com gás","category":"BEBIDAS"},{"id":"pdv-95","pdvId":95,"internal":"BEB002","barcode":"","name":"agua sem gás","category":"BEBIDAS"},{"id":"pdv-85","pdvId":85,"internal":"BEB003","barcode":"","name":"COCA COLA 600 ML","category":"BEBIDAS"},{"id":"pdv-169","pdvId":169,"internal":"BEB004","barcode":"","name":"COCA COLA DE 2LT","category":"BEBIDAS"},{"id":"pdv-164","pdvId":164,"internal":"BEB005","barcode":"","name":"COCA DE 1LT","category":"BEBIDAS"},{"id":"pdv-84","pdvId":84,"internal":"BEB006","barcode":"","name":"COCA-COLA LATA 350ML","category":"BEBIDAS"},{"id":"pdv-82","pdvId":82,"internal":"BEB007","barcode":"","name":"COCA-COLA 200ML","category":"BEBIDAS"},{"id":"pdv-83","pdvId":83,"internal":"BEB008","barcode":"","name":"COCA-COLA KS","category":"BEBIDAS"},{"id":"pdv-92","pdvId":92,"internal":"BEB009","barcode":"","name":"ENERGÉTICO BALY 473ML","category":"BEBIDAS"},{"id":"pdv-91","pdvId":91,"internal":"BEB010","barcode":"","name":"ENERGÉTICO KINA 2 LTS","category":"BEBIDAS"},{"id":"pdv-133","pdvId":133,"internal":"BEB011","barcode":"","name":"ENERGÉTICO KINA 500ML","category":"BEBIDAS"},{"id":"pdv-134","pdvId":134,"internal":"BEB012","barcode":"","name":"ENERGÉTICO MONSTER","category":"BEBIDAS"},{"id":"pdv-89","pdvId":89,"internal":"BEB013","barcode":"","name":"FANTA GUARANA PET 2L","category":"BEBIDAS"},{"id":"pdv-88","pdvId":88,"internal":"BEB014","barcode":"","name":"FANTA LARANJA 2L","category":"BEBIDAS"},{"id":"pdv-185","pdvId":185,"internal":"BEB015","barcode":"","name":"fanta laranja 600","category":"BEBIDAS"},{"id":"pdv-162","pdvId":162,"internal":"BEB016","barcode":"","name":"FANTA UVA 2L","category":"BEBIDAS"},{"id":"pdv-181","pdvId":181,"internal":"BEB017","barcode":"","name":"kina cola","category":"BEBIDAS"},{"id":"pdv-86","pdvId":86,"internal":"BEB018","barcode":"","name":"PUREZA DE 1LT","category":"BEBIDAS"},{"id":"pdv-153","pdvId":153,"internal":"BEB019","barcode":"","name":"REFRIGERANTE QUINARI 1LT","category":"BEBIDAS"},{"id":"pdv-100","pdvId":100,"internal":"BEB020","barcode":"","name":"SPRITE LATA","category":"BEBIDAS"},{"id":"pdv-145","pdvId":145,"internal":"DIV001","barcode":"","name":"BISCOITO MIRAGINA","category":"Diversos"},{"id":"pdv-157","pdvId":157,"internal":"DIV002","barcode":"","name":"BOLACHA MIRAGINA","category":"Diversos"},{"id":"pdv-141","pdvId":141,"internal":"DIV003","barcode":"","name":"CAFE CONTRI","category":"Diversos"},{"id":"pdv-142","pdvId":142,"internal":"DIV004","barcode":"","name":"CAFE SARAH","category":"Diversos"},{"id":"pdv-151","pdvId":151,"internal":"DIV005","barcode":"","name":"COLORAU","category":"Diversos"},{"id":"pdv-148","pdvId":148,"internal":"DIV006","barcode":"","name":"EVA DE TERERE","category":"Diversos"},{"id":"pdv-146","pdvId":146,"internal":"DIV007","barcode":"","name":"FARINHA","category":"Diversos"},{"id":"pdv-174","pdvId":174,"internal":"DIV008","barcode":"","name":"FATIA BOLO","category":"Diversos"},{"id":"pdv-144","pdvId":144,"internal":"DIV009","barcode":"","name":"LEITE DOBON","category":"Diversos"},{"id":"pdv-149","pdvId":149,"internal":"DIV010","barcode":"","name":"MOLHO COM TUCUPI","category":"Diversos"},{"id":"pdv-150","pdvId":150,"internal":"DIV011","barcode":"","name":"MOLHO GOTA","category":"Diversos"},{"id":"pdv-152","pdvId":152,"internal":"DIV012","barcode":"","name":"PAÇOCA","category":"Diversos"},{"id":"pdv-165","pdvId":165,"internal":"DIV013","barcode":"","name":"PAÇOCA GIBI","category":"Diversos"},{"id":"pdv-143","pdvId":143,"internal":"DIV014","barcode":"","name":"PASTA DE PIMENTA","category":"Diversos"},{"id":"pdv-175","pdvId":175,"internal":"DIV015","barcode":"","name":"PUDIM","category":"Diversos"},{"id":"pdv-176","pdvId":176,"internal":"DIV016","barcode":"","name":"RABADA COM CAMARÃO","category":"Diversos"},{"id":"pdv-177","pdvId":177,"internal":"DIV017","barcode":"","name":"RABADA SEM CAMARÃO","category":"Diversos"},{"id":"pdv-147","pdvId":147,"internal":"DIV018","barcode":"","name":"RAPE","category":"Diversos"},{"id":"pdv-183","pdvId":183,"internal":"DIV019","barcode":"","name":"sequilho miragina","category":"Diversos"},{"id":"pdv-166","pdvId":166,"internal":"DIV020","barcode":"","name":"sopa","category":"Diversos"}];
+let products=JSON.parse(localStorage.getItem(PK)||'null');
+if(!Array.isArray(products)||!products.length){products=SEEDED_PRODUCTS;localStorage.setItem(PK,JSON.stringify(products));}
+let days=JSON.parse(localStorage.getItem(DK)||'{}');
+let selected=null, mode='manha', stream=null, scanning=false;
+const $=id=>document.getElementById(id);
+const today=()=>new Date().toLocaleDateString('sv-SE',{timeZone:'America/Sao_Paulo'});
+const brdate=d=>{let [y,m,dd]=d.split('-');return `${dd}/${m}/${y}`};
+function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function closeM(id){$(id).classList.remove('show')}
+function persist(){localStorage.setItem(PK,JSON.stringify(products));localStorage.setItem(DK,JSON.stringify(days));render()}
+function rec(day=today()){if(!days[day])days[day]={};return days[day]}
+function row(id,day=today()){let r=rec(day);if(!r[id])r[id]={manha:null,fechamento:null};return r[id]}
+function calc(r){if(r.manha==null||r.fechamento==null)return null;return Math.max(0,r.manha-r.fechamento)}
+function render(){
+ let q=$('search').value.toLowerCase().trim(), d=rec(), arr=products.filter(p=>!q||p.name.toLowerCase().includes(q)||(p.barcode||'').includes(q)||(p.internal||'').toLowerCase().includes(q)||(p.category||'').toLowerCase().includes(q));
+ $('total').textContent=products.length;
+ $('contados').textContent=products.filter(p=>{let r=d[p.id];return r&&(r.manha!=null||r.fechamento!=null)}).length;
+ $('saidaHoje').textContent=products.reduce((a,p)=>a+(calc(d[p.id]||{})||0),0);
+ $('list').innerHTML=arr.length?arr.map(p=>{let r=d[p.id]||{},s=calc(r);return `<div class="product" onclick="openItemMenu('${p.id}')" style="cursor:pointer">
+ <div class="info"><strong>${esc(p.internal||'')} • ${esc(p.name)}</strong><span class="muted">${esc(p.category||'')} · Barras: ${esc(p.barcode||'a cadastrar')}</span><br>
+ <span class="badge">🌅 ${r.manha==null?'—':r.manha}</span> <span class="badge">🌙 ${r.fechamento==null?'—':r.fechamento}</span></div>
+ <div class="${s==null?'muted':'out'}">${s==null?'—':s+' saiu'}</div></div>`}).join(''):'<div class="empty">Nenhum produto cadastrado.</div>';
+}
+function openProduct(code=''){$('internal').value='';$('barcode').value=code;$('name').value='';$('productModal').classList.add('show')}
+function saveProduct(){
+ let internal=$('internal').value.trim().toUpperCase(),barcode=$('barcode').value.trim(),name=$('name').value.trim();
+ if(!internal)return alert('Digite o código interno.');
+ if(products.some(p=>(p.internal||'').toUpperCase()===internal))return alert('Este código interno já está cadastrado.');
+ if(!name)return alert('Digite o nome do produto.');
+ if(barcode&&products.some(p=>p.barcode===barcode))return alert('Este código já está cadastrado.');
+ products.push({id:Date.now().toString(36),internal,barcode,name,category:'NOVOS'});persist();closeM('productModal');
+}
+function openCount(p,m){
+ selected=p;mode=m;
+ let r=row(p.id);
+ $('countTitle').textContent=m==='manha'?'🌅 Contagem da manhã':'🌙 Contagem do fechamento';
+ $('countName').textContent=(p.internal?p.internal+' • ':'')+p.name;$('countCode').textContent='Código de barras: '+(p.barcode||'a cadastrar');
+ $('countLabel').textContent=m==='manha'?'Quantidade no início do dia':'Quantidade que sobrou no fechamento';
+ $('countQty').value=r[m]??'';
+ $('calcPreview').style.display=m==='fechamento'&&r.manha!=null?'block':'none';
+ if(m==='fechamento'&&r.manha!=null)$('calcPreview').innerHTML=`Manhã: <b>${r.manha}</b> un<br>Digite o que sobrou para calcular a saída.`;
+ $('countModal').classList.add('show');setTimeout(()=>$('countQty').focus(),150);
+}
+function saveCount(){
+ let v=Math.trunc(+$('countQty').value);if(!Number.isFinite(v)||v<0)return alert('Informe uma quantidade válida.');
+ let r=row(selected.id);r[mode]=v;
+ if(mode==='fechamento'&&r.manha==null){alert('Faça primeiro a contagem da manhã deste produto.');return}
+ persist();closeM('countModal');
+ setTimeout(()=>scan(mode),120);
+}
+function useCode(code){
+ code=String(code||'').trim();if(!code)return;
+ stopScan();let p=products.find(x=>x.barcode===code);
+ if(p)openCount(p,mode);else{openProduct(code)}
+}
+async function scan(m){
+ mode=m||mode;$('scanTitle').textContent=mode==='manha'?'📷 Bipar • Contagem da manhã':'📷 Bipar • Fechamento';
+ $('manualCode').value='';$('scanModal').classList.add('show');$('camMsg').style.display='block';$('camMsg').textContent='Abrindo câmera…';
+ if(!navigator.mediaDevices?.getUserMedia){$('camMsg').textContent='Publique o aplicativo em HTTPS para usar a câmera. Você também pode digitar o código abaixo.';return}
+ try{
+  stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'}},audio:false});
+  $('video').srcObject=stream;await $('video').play();$('camMsg').style.display='none';
+  if('BarcodeDetector'in window){
+   let formats=await BarcodeDetector.getSupportedFormats();
+   let use=formats.filter(x=>['ean_13','ean_8','upc_a','upc_e','code_128','qr_code'].includes(x));
+   let detector=new BarcodeDetector({formats:use});scanning=true;
+   const loop=async()=>{if(!scanning)return;try{let codes=await detector.detect($('video'));if(codes.length){navigator.vibrate?.(100);return useCode(codes[0].rawValue)}}catch(e){}requestAnimationFrame(loop)};loop();
+  }else{$('camMsg').style.display='block';$('camMsg').textContent='Leitura automática não disponível neste navegador. Digite o código abaixo.'}
+ }catch(e){$('camMsg').style.display='block';$('camMsg').textContent='Não foi possível abrir a câmera. Verifique a permissão do navegador.'}
+}
+function stopScan(){scanning=false;if(stream)stream.getTracks().forEach(t=>t.stop());stream=null;closeM('scanModal')}
+
+function openItemMenu(id){
+ let p=products.find(x=>x.id===id); if(!p)return;
+ let r=row(p.id), s=calc(r);
+ $('infoTitle').textContent=(p.internal?p.internal+' • ':'')+p.name;
+ $('infoBody').innerHTML=`<p><b>Categoria:</b> ${esc(p.category||'')}</p>
+ <p><b>Código de barras:</b> ${esc(p.barcode||'Ainda não cadastrado')}</p>
+ <div class="actions no-print">
+ <button class="btn primary" onclick="closeM('infoModal');openCount(products.find(x=>x.id==='${p.id}'),'manha')">🌅 Contar manhã</button>
+ <button class="btn primary" onclick="closeM('infoModal');openCount(products.find(x=>x.id==='${p.id}'),'fechamento')">🌙 Contar fechamento</button>
+ <button class="btn secondary" onclick="editBarcode('${p.id}')">▥ Cadastrar/alterar código de barras</button>
+ <button class="btn danger" onclick="deleteProduct('${p.id}')">🗑️ Excluir produto</button>
+ </div>
+ <p class="hint">Manhã: <b>${r.manha??'—'}</b> · Fechamento: <b>${r.fechamento??'—'}</b> · Saíram: <b>${s??'—'}</b></p>`;
+ $('infoModal').classList.add('show');
+}
+function deleteProduct(id){
+ let p=products.find(x=>x.id===id);if(!p)return;
+ if(!confirm('Excluir '+(p.internal?p.internal+' • ':'')+p.name+' do estoque?\n\nAs contagens deste produto também serão removidas.'))return;
+ products=products.filter(x=>x.id!==id);
+ for(const d of Object.keys(days)){if(days[d]&&days[d][id])delete days[d][id]}
+ persist();
+ closeM('infoModal');
+ alert('Produto excluído.');
+}
+function editBarcode(id){
+ let p=products.find(x=>x.id===id);if(!p)return;
+ let code=prompt('Digite ou cole o código de barras de '+p.name+':',p.barcode||'');
+ if(code===null)return; code=code.trim();
+ if(code && products.some(x=>x.id!==id&&x.barcode===code))return alert('Este código de barras já pertence a outro produto.');
+ p.barcode=code;persist();closeM('infoModal');openItemMenu(id);
+}
+
+function showReport(){
+ let d=today(), rr=rec(d), rows=products.map(p=>({p,r:rr[p.id]||{}})).filter(x=>x.r.manha!=null||x.r.fechamento!=null);
+ let totalManha=rows.reduce((a,x)=>a+(Number(x.r.manha)||0),0);
+ let totalFech=rows.reduce((a,x)=>a+(Number(x.r.fechamento)||0),0);
+ let totalSaiu=rows.reduce((a,x)=>a+(calc(x.r)||0),0);
+ let completos=rows.filter(x=>x.r.manha!=null&&x.r.fechamento!=null).length;
+ let pendentes=rows.filter(x=>x.r.manha!=null&&x.r.fechamento==null).length;
+ let hora=new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+ $('infoTitle').textContent='🧾 Fechamento • '+brdate(d);
+ $('infoBody').innerHTML=rows.length?`<div class="receipt58">
+ <div class="receipt-head"><b>RAÍZES DO ACRE</b><br>CONTROLE DIÁRIO DE ESTOQUE<br><small>Comprovante de contagem</small></div>
+ <div class="receipt-line"></div>
+ <div><b>Data:</b> ${brdate(d)} &nbsp; <b>Hora:</b> ${hora}</div>
+ <div><b>Produtos contados:</b> ${rows.length}</div>
+ <div><b>Contagens completas:</b> ${completos}</div>
+ ${pendentes?`<div><b>Pendentes de fechamento:</b> ${pendentes}</div>`:''}
+ <div class="receipt-line"></div>
+ <table class="report"><thead><tr><th>Produto</th><th>M</th><th>F</th><th>S</th></tr></thead><tbody>
+ ${rows.map(x=>`<tr><td>${esc((x.p.internal?x.p.internal+' • ':'')+x.p.name)}</td><td>${x.r.manha??'—'}</td><td>${x.r.fechamento??'—'}</td><td><b>${calc(x.r)??'—'}</b></td></tr>`).join('')}
+ </tbody></table>
+ <div class="receipt-line"></div>
+ <div class="receipt-total"><span>Total manhã</span><b>${totalManha} un.</b></div>
+ <div class="receipt-total"><span>Total fechamento</span><b>${totalFech} un.</b></div>
+ <div class="receipt-total grand"><span>TOTAL QUE SAIU</span><b>${totalSaiu} un.</b></div>
+ <div class="receipt-line"></div>
+ <div class="receipt-legend"><b>Legenda:</b><br>M = contagem da manhã<br>F = contagem do fechamento<br>S = unidades que saíram<br>Saída = Manhã - Fechamento</div>
+ <div class="receipt-line"></div>
+ <div class="receipt-sign">Responsável: __________________<br><br>Conferência: __________________</div>
+ <div class="receipt-foot">Raízes do Acre<br>Controle interno de estoque</div>
+ </div>
+ <button class="btn print no-print" style="width:100%;margin-top:12px" onclick="window.print()">🖨️ Imprimir cupom 58 mm</button>`:
+ '<div class="empty">Ainda não há contagens registradas hoje.</div>';
+ $('infoModal').classList.add('show');
+}
+render();
+</script>
+</body></html>
